@@ -1,0 +1,15 @@
+{
+  "main": "index.html",
+  "name": "Arcade",
+  "window": {
+    "toolbar": false,
+    "frame": false,
+    "width": 1024,
+    "height": 768,
+    "fullscreen": false,
+    "theme": "MAME"
+  },
+  "webkit": {
+    "plugin": true
+  }
+}

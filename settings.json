@@ -1,0 +1,16 @@
+{
+  "emulators": {
+    "MAME": {
+      "command": "",
+      "parameters": "",
+      "background": "Background.png",
+      "path": "menu/themes",
+      "default": "MAME",
+      "theme": "MAME-Donnei1979(20100324).zip",
+      "video": {
+        "path": "menu/video/MAME.webm",
+        "type": "video/webm"
+      }
+    }
+  }
+}

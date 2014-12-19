@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Arcade</title>
+    <link rel='stylesheet' href='reset.css'>
+    <link rel='stylesheet' href='style.css'>
+    <script type="text/javascript" src="scripts/jquery.min.js"></script>
+</head>
+<body>
+<header>
+    <ul>
+        <li><a href='#' title='Minimize' id='windowControlMinimize'></a></li>
+        <li><a href='#' title='Maximize' id='windowControlMaximize'></a></li>
+        <li><a href='#' title='Close' id='windowControlClose'></a></li>
+    </ul>
+</header>
+<div class="container">
+    <div class="outer">
+        <div class="inner">
+
+        </div>
+    </div>
+</div>
+
+<script>
+    var nw = require('nw.gui');
+    var fs = require('fs');
+    var path = require('path');
+    var AdmZip = require('adm-zip');
+    var parseString = require('xml2js').parseString;
+    var selectedEmulator = "MAME";
+    var zipPath = "";
+    win = nw.Window.get();
+
+
+    // Allow copy&paste console window mac
+    var nativeMenuBar = new nw.Menu({type: "menubar"});
+    try {
+        nativeMenuBar.createMacBuiltin("My App");
+        win.menu = nativeMenuBar;
+    } catch (ex) {
+        console.log(ex.message);
+    }
+
+    var appWidth = win.width;
+    var appHeight = win.height;
+    var initComplete = 0;
+    var appSettings = "";
+    var settings = "";
+
+    // Min
+    document.getElementById('windowControlMinimize').onclick = function () {
+        win.maximize();
+    };
+
+    // Close
+    document.getElementById('windowControlClose').onclick = function () {
+        win.close();
+    };
+
+    // Max
+    document.getElementById('windowControlMaximize').onclick = function () {
+        if (win.isMaximized)
+            win.unmaximize();
+        else
+            win.maximize();
+    };
+
+    win.on('maximize', function () {
+        win.isMaximized = true;
+    });
+
+    win.on('unmaximize', function () {
+        win.isMaximized = false;
+    });
+
+    win.on('resize', function () {
+
+        var newHeight = appHeight * win.width / appWidth;
+        win.resizeTo(win.width, newHeight);
+        var hFactor = newHeight / appHeight;
+        var wFactor = win.width / appWidth;
+
+        $('.inner').css('-webkit-transform', 'scale(' + wFactor + ',' + hFactor + ')');
+        $('.inner').css('-webkit-transform-origin', (1 - wFactor) + '% ' + (1 - hFactor) + '%');
+
+    });
+
+    function setDisplay() {
+
+        var video = document.createElement('video');
+        video.id = "themeVideo";
+        video.width = settings.Theme.video[0].$.w;
+        video.height = settings.Theme.video[0].$.h;
+        video.controls = false;
+        video.autoplay = true;
+        video.loop = true;
+
+        var source = document.createElement('source');
+        source.src = 'media/' + appSettings.emulators[selectedEmulator].video.path;
+        source.type = appSettings.emulators[selectedEmulator].video.type;
+
+        video.appendChild(source);
+
+        $(".inner").append("<div id='embedVideo'></div>");
+
+        document.getElementById('embedVideo').appendChild(video);
+
+        $("#embedVideo").parent().css({position: 'relative'});
+        $("#embedVideo").css({
+            top: parseInt(settings.Theme.video[0].$.y) - parseInt(settings.Theme.video[0].$.h) / 2,
+            left: parseInt(settings.Theme.video[0].$.x) - parseInt(settings.Theme.video[0].$.w) / 2,
+            position: 'absolute',
+            float: 'left',
+            border: settings.Theme.video[0].$.bsize + 'px solid #' + parseInt(settings.Theme.video[0].$.bcolor).toString(16),
+            height: settings.Theme.video[0].$.h,
+            width: settings.Theme.video[0].$.w,
+            '-webkit-transform': 'rotate(' + settings.Theme.video[0].$.r + 'deg)'
+        });
+
+    }
+
+    function generateArtwork() {
+        for (var k in settings.Theme) {
+            if (k !== "video") {
+                createArtElements(k);
+            }
+        }
+
+        var backgroundData = getImageFromZip(appSettings.emulators[selectedEmulator].background);
+
+        $("html").css("background-image", "url('data:image/png;base64," + backgroundData + "')");
+        $("html").css("background-size", "cover");
+
+    }
+
+    function createArtElements(img) {
+
+        var data = getImageFromZip(toTitleCase(img) + ".png");
+        $(".inner").append("<div id='" + img + "'><img id='image-" + img + "' class='img-responsive' src='data:image/png;base64," + data + "'></div>");
+
+
+        $("<img/>").attr("src", $("#image-" + img).attr("src"))
+                .load(function () {
+                    var pic_real_width = this.width;
+                    var pic_real_height = this.height;
+
+                    $("#" + img).css({
+                        top: parseInt(settings.Theme[img][0].$.y) - (pic_real_height / 2),
+                        left: parseInt(settings.Theme[img][0].$.x) - (pic_real_width / 2),
+                        position: 'absolute'
+                    });
+                });
+    }
+
+    function toTitleCase(str) {
+        return str.replace(/(?:^|\s)\w/g, function (match) {
+            return match.toUpperCase();
+        });
+    }
+
+    function init() {
+
+        if (initComplete == 0) {
+            appSettings = parseJsonFile('settings.json');
+            zipPath = 'media/' + appSettings.emulators[selectedEmulator].path + '/' + appSettings.emulators[selectedEmulator].theme;
+            settings = displayThemeFromZip();
+
+            setDisplay();
+            generateArtwork();
+            $("header").css('z-index', '99999');
+            $("header").css('position', 'absolute');
+            initComplete = 1;
+        }
+    }
+
+    function parseJsonFile(path) {
+        return JSON.parse(fs.readFileSync(path, 'utf8'));
+    }
+
+    win.on('loaded', function () {
+        init();
+    });
+
+    function displayThemeFromZip() {
+
+        var zip = new AdmZip(zipPath);
+        var xml = zip.readAsText("Theme.xml");
+        var contents = "";
+        parseString(xml, function (err, result) {
+            contents = result;
+        });
+
+        return contents;
+    }
+
+    function getImageFromZip(asset) {
+        var zip = new AdmZip(zipPath);
+        var data = zip.readFile(asset);
+
+        if (data != null) {
+            return data.toString('base64');
+        } else {
+            return "";
+        }
+    }
+</script>
+</body>
+</html>
