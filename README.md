@@ -15,7 +15,7 @@ Currently this build will load in the theme from the settings file and display t
 
 
 ##Installation
-1. Download [https://github.com/rogerwang/node-webkit](nodewebkit)
+1. Download [https://github.com/nwjs/nw.js](nodewebkit)
 2. Clone down this repo
 3. Extract the files
 4. `node-webkit.app/Contents/MacOS/node-webkit nodespin-fe
