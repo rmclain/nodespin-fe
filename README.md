@@ -4,7 +4,7 @@ This project is an attempt at recreating most of the functionality of Hyperspin 
 ![screenshot](http://cl.ly/image/3G3p3N01400p/screenshot.png)
 
 ##Status
-Currently this build will load in the theme from the settings file and display the theme's content.
+Currently this package will read Hyperspin theme files and display them via nwjs. 
 
 ##Roadmap
 * Select emulator from scroll wheel
@@ -18,6 +18,7 @@ Currently this build will load in the theme from the settings file and display t
 1. Download [http://nwjs.io/](http://nwjs.io/)
 2. Clone down this repo
 3. Extract the files
-4. `node-webkit.app/Contents/MacOS/node-webkit nodespin-fe
-5. That's it
+4. Install the node modules - adm-zip, sax, xml2js, and xmlbuilder are required
+5. Execute through nwjs "nwjs.app/Contents/MacOS/nwjs nodespin-fe
+6. That's it
 
